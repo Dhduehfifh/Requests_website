@@ -1,0 +1,7 @@
+{
+    "require": {
+        "illuminate/database": "^12.28",
+        "illuminate/events": "^12.28",
+        "ramsey/uuid": "^4.9"
+    }
+}
