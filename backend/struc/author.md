@@ -1,2 +1,1 @@
-数据库结构部分是mike写的，我只是将数据库结构从python转化成了php
-此部分贡献100% from mike
+The database structure was entirely contributed by Mike. Due to the failure to create the repository in time, the contribution cannot be recorded. This is hereby declared
