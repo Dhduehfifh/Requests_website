@@ -1,0 +1,20 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+class User { +id +phone_e164 +email +birthday +username +avatar_url +school +city +language +banned_until +created_at +updated_at }
+class ForumPost { +id +author_id +title +content +city +province +tags +visibility +post_type +status +images +created_at +updated_at +deleted_at }
+class ForumComment { +id +post_id +author_id +content +created_at +updated_at +deleted_at }
+class MarketListing { +id +forum_post_id +category +price +trade_methods +created_at +updated_at }
+class HousingListing { +id +forum_post_id +address +unit_number +city +province +postal_code +housing_type +housing_type_other +rent +rent_unit +created_at +updated_at }
+class LfgPost { +id +forum_post_id +topic +people_needed +total_expected +online +created_at +updated_at }
+class Conversation { +id +user_a +user_b +created_at +updated_at }
+class Message { +id +conv_id +sender_id +content +images +ref_post_id +created_at +updated_at }
+User "1" -- "0..*" ForumPost : writes >
+ForumPost "1" -- "0..*" ForumComment : has >
+ForumPost "1" -- "0..1" MarketListing : specializes >
+ForumPost "1" -- "0..1" HousingListing : specializes >
+ForumPost "1" -- "0..1" LfgPost : specializes >
+User "1" -- "0..*" ForumComment : writes >
+User "1" -- "0..*" Conversation : participates >
+Conversation "1" -- "0..*" Message : contains >
+@enduml
