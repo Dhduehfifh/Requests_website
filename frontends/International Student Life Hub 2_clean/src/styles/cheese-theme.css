@@ -1,0 +1,118 @@
+/* 奶酪主题配色方案 🧀 */
+
+:root {
+  /* 主色调 - 奶酪黄 */
+  --cheese-primary: #F4D03F;      /* 温暖奶酪黄 */
+  --cheese-primary-dark: #F39C12; /* 深奶酪橙 */
+  --cheese-primary-light: #F7DC6F; /* 浅奶酪黄 */
+  
+  /* 辅助色 - 奶酪白 */
+  --cheese-secondary: #FEF7E0;    /* 奶酪白 */
+  --cheese-secondary-dark: #F5E6D3; /* 深奶酪白 */
+  
+  /* 强调色 - 奶酪洞 */
+  --cheese-accent: #D4A574;       /* 奶酪洞色 */
+  --cheese-accent-light: #E8C4A0; /* 浅奶酪洞色 */
+  
+  /* 背景色 */
+  --cheese-bg: #FFFBF5;           /* 温暖白 */
+  --cheese-bg-secondary: #FEF7E0; /* 奶酪白背景 */
+  --cheese-bg-card: #FFFFFF;      /* 纯白卡片 */
+  
+  /* 文字色 */
+  --cheese-text-primary: #2D3436;  /* 深灰 */
+  --cheese-text-secondary: #636E72; /* 中灰 */
+  --cheese-text-muted: #B2BEC3;    /* 浅灰 */
+  
+  /* 边框色 */
+  --cheese-border: #F5E6D3;       /* 奶酪边框 */
+  --cheese-border-light: #FEF7E0; /* 浅奶酪边框 */
+  
+  /* 状态色 */
+  --cheese-success: #00B894;      /* 成功绿 */
+  --cheese-warning: #FDCB6E;      /* 警告黄 */
+  --cheese-error: #E17055;        /* 错误红 */
+  --cheese-info: #74B9FF;         /* 信息蓝 */
+}
+
+/* 奶酪主题组件样式 */
+.cheese-gradient {
+  background: linear-gradient(135deg, var(--cheese-primary) 0%, var(--cheese-primary-dark) 100%);
+}
+
+.cheese-gradient-light {
+  background: linear-gradient(135deg, var(--cheese-primary-light) 0%, var(--cheese-primary) 100%);
+}
+
+.cheese-card {
+  background: var(--cheese-bg-card);
+  border: 1px solid var(--cheese-border);
+  box-shadow: 0 2px 8px rgba(244, 162, 97, 0.1);
+}
+
+.cheese-button-primary {
+  background: var(--cheese-primary);
+  color: white;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.cheese-button-primary:hover {
+  background: var(--cheese-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.3);
+}
+
+.cheese-text-primary {
+  color: var(--cheese-text-primary);
+}
+
+.cheese-text-secondary {
+  color: var(--cheese-text-secondary);
+}
+
+.cheese-bg {
+  background: var(--cheese-bg);
+}
+
+.cheese-bg-secondary {
+  background: var(--cheese-bg-secondary);
+}
+
+/* 奶酪洞效果 */
+.cheese-hole {
+  position: relative;
+  overflow: hidden;
+}
+
+.cheese-hole::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--cheese-accent);
+  border-radius: 50%;
+  top: 20%;
+  left: 15%;
+  opacity: 0.6;
+}
+
+.cheese-hole::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--cheese-accent);
+  border-radius: 50%;
+  top: 60%;
+  right: 20%;
+  opacity: 0.4;
+}
+
+/* 奶酪纹理背景 */
+.cheese-texture {
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(212, 165, 116, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(212, 165, 116, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(212, 165, 116, 0.06) 0%, transparent 50%);
+}
