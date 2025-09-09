@@ -1,3 +1,5 @@
+//猜你喜欢
+//TODO：以推荐算法为标准search，两个api，参数为type,返回不同帖子
 import { Heart, TrendingUp, Clock } from 'lucide-react';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';

@@ -1,3 +1,5 @@
+//广场
+//TODO：热门状态栏集合渲染，使用oneclick
 import { TrendingUp, Users } from 'lucide-react';
 import { Card } from './ui/card';
 import { ModuleType } from '../App';
@@ -77,6 +79,7 @@ export function ExploreScreen({ onModuleSelect }: ExploreScreenProps) {
     { label: '今日新貼', value: '124', icon: TrendingUp },
     { label: '活躍用戶', value: '1.2k', icon: Users }
   ];
+  //这个删掉变成banner
 
   const trendingPosts = [
     { 

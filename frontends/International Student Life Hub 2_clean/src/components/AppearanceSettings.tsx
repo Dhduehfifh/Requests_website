@@ -1,3 +1,4 @@
+//设定/外观与语言
 import { ArrowLeft, Palette, Moon, Sun, Globe, Type, Eye, Contrast, Smartphone, Monitor } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';

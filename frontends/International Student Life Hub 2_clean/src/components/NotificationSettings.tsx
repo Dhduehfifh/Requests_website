@@ -1,3 +1,5 @@
+//需要内接震动行为模块，消息提醒模块等
+
 import { ArrowLeft, Bell, Volume2, VolumeX, Smartphone, Mail, MessageSquare, Calendar, Users, Heart } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';

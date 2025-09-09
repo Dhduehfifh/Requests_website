@@ -1,3 +1,4 @@
+//太好了，找到monk data变量名了，但是数据结构需要调整至带type的，当然可以写syntax
 import { ArrowLeft, Search, Filter, MapPin, Clock, DollarSign, Users, MessageCircle as MessageIcon } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';

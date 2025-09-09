@@ -1,3 +1,5 @@
+//底部navbar
+//TODO：增加维持这个地方的东西
 import { Heart, Compass, Plus, MessageSquare, User } from 'lucide-react';
 import { ScreenType } from '../App';
 

@@ -70,14 +70,14 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
       icon: MessageSquare,
       action: '开始对话',
       available: true
-    },
+    },//这里加上一个href元素，但是大概率不会有在线客服
     {
       title: '邮件支持',
       description: 'support@cheese-app.com',
       icon: Mail,
       action: '发送邮件',
       available: true
-    },
+    },//邮件设置复制邮件地址
     {
       title: '电话支持',
       description: '+1 (555) 123-4567',
@@ -85,6 +85,7 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
       action: '拨打电话',
       available: false
     }
+    //这里加上一个 tel元素
   ];
 
   const appInfo = [
@@ -93,7 +94,7 @@ export function HelpSettings({ onBack }: HelpSettingsProps) {
     { label: '更新时间', value: '2024年9月9日' },
     { label: '开发者', value: '奶酪团队' },
     { label: '支持平台', value: 'iOS, Android, Web' }
-  ];
+  ];//这里加上fetch req
 
   const filteredFaq = selectedCategory === 'all' 
     ? faqItems 

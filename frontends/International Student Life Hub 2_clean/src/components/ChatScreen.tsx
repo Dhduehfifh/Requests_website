@@ -1,3 +1,5 @@
+//消息/个人聊天/general模板
+//TODO:分离出来哪些是聊天气泡模板，加入ws适配
 import { ArrowLeft, MoreHorizontal, Phone, Video, Send, Image, Smile, Paperclip } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';

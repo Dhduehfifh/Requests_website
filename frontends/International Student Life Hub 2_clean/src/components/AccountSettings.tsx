@@ -1,3 +1,4 @@
+//编辑个人资料页
 import { ArrowLeft, User, Lock, Mail, Phone, MapPin, Calendar, Shield, Key, Trash2, Download, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';

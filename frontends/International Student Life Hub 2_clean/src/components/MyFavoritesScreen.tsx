@@ -1,3 +1,4 @@
+//我的/我的收藏/
 import { ArrowLeft, Heart, Search, Filter, Calendar, MapPin, Users, Clock, Star, MoreVertical, Share, Bookmark } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -271,6 +272,7 @@ export function MyFavoritesScreen({ onBack, savedPosts = [] }: MyFavoritesScreen
                   return renderPlaceItem(item);
                 default:
                   return null;
+                  //错误：点击某一个的时候，只应该选中它并使用EventListener.oneclick(function(){element.style.color(black)}）收藏点赞同理
               }
             })
           )}

@@ -1,3 +1,4 @@
+//我的/邀请朋友
 import { ArrowLeft, Share2, Copy, Mail, MessageSquare, QrCode, Users, Gift, Star, CheckCircle, ExternalLink } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -33,7 +34,7 @@ export function InviteFriendsScreen({ onBack }: InviteFriendsScreenProps) {
       icon: QrCode,
       action: '生成二维码',
       color: 'bg-purple-100 text-purple-600'
-    },
+    },//二维码生成器，需要作为链接使用
     {
       title: '邮件邀请',
       description: '通过邮件发送邀请',
@@ -271,6 +272,7 @@ export function InviteFriendsScreen({ onBack }: InviteFriendsScreenProps) {
             </h2>
             <Card className="bg-white border border-gray-200">
               <div className="divide-y divide-gray-100">
+                {/**TODO:生成邀请码，生成剪切板 */}
                 {recentInvites.map((invite, index) => (
                   <div key={index} className="p-4">
                     <div className="flex items-center justify-between">
