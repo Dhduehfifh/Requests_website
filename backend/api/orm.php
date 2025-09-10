@@ -59,7 +59,7 @@ abstract class Model {
     }
     $sql="SELECT * FROM ".static::$table;
     if ($where) $sql.=" WHERE ".implode(' AND ',$where);
-    $order = in_array(($q['order']??'created_at'), static::$allowedOrder, true) ? $q['order'] : 'created_at';
+    $order = in_array(($q['order']??'created_at'), static::$allowedOrder, true) ? ($q['order']??'created_at') : 'created_at';
     $dir   = strtolower($q['dir']??'desc') === 'asc' ? 'asc' : 'desc';
     $sql  .= " ORDER BY {$order} {$dir}";
     $limit = max(1, min(200, (int)($q['limit']??20)));
@@ -96,8 +96,9 @@ class User extends Model {
   protected static array  $allowedOrder=['created_at','updated_at','id','username','city'];
 
   public static function validate(array $d, bool $creating=true){
-    if ($creating && empty($d['username'])) throw new Exception('username required');
-    if (isset($d['language']) && !in_array($d['language'], ['zh','en'], true)) throw new Exception('language must be zh|en|null');
+    validate_user_data($d, $creating);
+    
+    // Check uniqueness constraints
     foreach (['phone_e164','email','username'] as $u) {
       if (!empty($d[$u])) {
         $sql="SELECT id FROM users WHERE {$u}=:v";
@@ -117,14 +118,10 @@ class ForumPost extends Model {
   protected static array  $allowedOrder=['created_at','updated_at','id','author_id','status','post_type'];
 
   public static function validate(array $d, bool $creating=true){
+    validate_forum_post_data($d, $creating);
+    
     if ($creating && empty($d['author_id'])) throw new Exception('author_id required');
     if (!empty($d['author_id']) && !User::existsById($d['author_id'])) throw new Exception('author_id not exists');
-    $enVis=['public','friends','private'];
-    $enType=['general','market','housing','lfg'];
-    $enStatus=['active','closed','deleted'];
-    if (isset($d['visibility']) && !in_array($d['visibility'],$enVis,true)) throw new Exception('visibility invalid');
-    if (isset($d['post_type']) && !in_array($d['post_type'],$enType,true)) throw new Exception('post_type invalid');
-    if (isset($d['status']) && !in_array($d['status'],$enStatus,true)) throw new Exception('status invalid');
   }
 }
 
@@ -144,15 +141,11 @@ class MarketListing extends Model {
   protected static array  $jsonFields=['trade_methods'];
   protected static array  $allowedOrder=['created_at','updated_at','id','forum_post_id','price','category'];
   public static function validate(array $d, bool $creating=true){
-    $cats=['electronics','furniture','home_appliances','vehicles','books','fashion','sports','entertainment','digital','other'];
+    validate_market_listing_data($d, $creating);
+    
     if ($creating && empty($d['forum_post_id'])) throw new Exception('forum_post_id required');
     if (!empty($d['forum_post_id']) && !ForumPost::existsById($d['forum_post_id'])) throw new Exception('forum_post_id not exists');
-    if (isset($d['category']) && !in_array($d['category'],$cats,true)) throw new Exception('category invalid');
-    if (isset($d['price']) && !is_numeric($d['price'])) throw new Exception('price must be numeric');
-    if (isset($d['trade_methods'])){
-      $ok=['meetup','pickup','delivery','shipping'];
-      foreach((array)$d['trade_methods'] as $m){ if(!in_array($m,$ok,true)) throw new Exception('trade_methods invalid'); }
-    }
+    
     // 业务约束示例：非 digital 的类目，父帖子必须有 city
     if (!empty($d['category']) && $d['category']!=='digital' && !empty($d['forum_post_id'])){
       $p = ForumPost::find($d['forum_post_id']);
@@ -214,6 +207,8 @@ class Message extends Model {
   protected static array  $fillable=['id','conv_id','sender_id','content','images','ref_post_id','created_at','updated_at'];
   protected static array  $jsonFields=['images'];
   public static function validate(array $d, bool $creating=true){
+    validate_message_data($d, $creating);
+    
     if ($creating && (empty($d['conv_id'])||empty($d['sender_id'])||empty($d['content']))) throw new Exception('conv_id, sender_id, content required');
     if (!empty($d['conv_id']) && !Conversation::existsById($d['conv_id'])) throw new Exception('conv_id not exists');
     if (!empty($d['sender_id']) && !User::existsById($d['sender_id'])) throw new Exception('sender_id not exists');

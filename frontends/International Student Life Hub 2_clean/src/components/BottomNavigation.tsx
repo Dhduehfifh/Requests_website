@@ -2,6 +2,7 @@
 //TODO：增加维持这个地方的东西
 import { Heart, Compass, Plus, MessageSquare, User } from 'lucide-react';
 import { ScreenType } from '../App';
+import { HapticsService } from '../lib/haptics';
 
 interface BottomNavigationProps {
   currentScreen: ScreenType;
@@ -46,8 +47,14 @@ export function BottomNavigation({ currentScreen, onNavigate }: BottomNavigation
   // Show home icon when on module screens
   const shouldShowHome = currentScreen === 'module';
   
+  const handleNavigation = async (screen: ScreenType) => {
+    // Trigger haptics on native
+    await HapticsService.impactLight();
+    onNavigate(screen);
+  };
+  
   return (
-    <div className="bg-white border-t border-gray-200 px-4 py-2 pb-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 pb-4 safe-area-inset-bottom">
       <div className="flex items-center justify-between">
         {navItems.map((item) => {
           const IconComponent = item.icon;
@@ -57,7 +64,7 @@ export function BottomNavigation({ currentScreen, onNavigate }: BottomNavigation
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => handleNavigation(item.id)}
               className={`flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 transition-all duration-200 ${
                 isSpecialButton ? 'relative' : ''
               }`}

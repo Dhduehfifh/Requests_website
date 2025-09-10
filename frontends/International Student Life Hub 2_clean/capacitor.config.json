@@ -1,0 +1,13 @@
+{
+  "appId": "com.yourco.islh",
+  "appName": "ISLH",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

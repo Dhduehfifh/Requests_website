@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   phone_e164 TEXT UNIQUE,
   email TEXT UNIQUE,
+  password_hash TEXT,
   birthday TEXT,
   username TEXT UNIQUE NOT NULL,
   avatar_url TEXT,
@@ -20,6 +21,21 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+SQL);
+
+  // user_sessions
+  $pdo->exec(<<<SQL
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  expires_at TEXT NOT NULL,
+  last_access TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token);
 SQL);
 
   // forum_posts
@@ -147,5 +163,35 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conv_id);
 CREATE INDEX IF NOT EXISTS idx_msg_sender ON messages(sender_id);
+SQL);
+
+  // post_likes
+  $pdo->exec(<<<SQL
+CREATE TABLE IF NOT EXISTS post_likes (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_likes_post ON post_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_likes_user ON post_likes(user_id);
+SQL);
+
+  // user_follows
+  $pdo->exec(<<<SQL
+CREATE TABLE IF NOT EXISTS user_follows (
+  id TEXT PRIMARY KEY,
+  follower_id TEXT NOT NULL,
+  following_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(follower_id, following_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON user_follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following ON user_follows(following_id);
 SQL);
 }

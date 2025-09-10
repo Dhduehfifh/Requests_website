@@ -4,7 +4,10 @@ import { TrendingUp, Users } from 'lucide-react';
 import { Card } from './ui/card';
 import { ModuleType } from '../App';
 import { PostDetailScreen } from './PostDetailScreen';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { listPosts, type ForumPost } from '../lib/api';
+import { HapticsService } from '../lib/haptics';
+import { EnhancedTextRenderer } from '../lib/linkRenderer';
 
 interface ExploreScreenProps {
   onModuleSelect: (module: ModuleType) => void;
@@ -51,19 +54,60 @@ const modules = [
 
 export function ExploreScreen({ onModuleSelect }: ExploreScreenProps) {
   const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [trendingPosts, setTrendingPosts] = useState<ForumPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ todayPosts: 0, activeUsers: 0 });
 
-  const handlePostClick = (post: any) => {
+  useEffect(() => {
+    loadTrendingPosts();
+  }, []);
+
+  const loadTrendingPosts = async () => {
+    try {
+      setLoading(true);
+      // Trigger haptics on native
+      await HapticsService.impactLight();
+      const posts = await listPosts({
+        limit: 6,
+        order: 'created_at',
+        dir: 'desc',
+        status: 'active'
+      });
+      
+      setTrendingPosts(posts);
+      
+      // Calculate stats (simplified for MVP)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayPosts = posts.filter(post => 
+        new Date(post.created_at) >= today
+      ).length;
+      
+      setStats({
+        todayPosts,
+        activeUsers: Math.floor(Math.random() * 1000) + 500 // Mock data
+      });
+    } catch (error) {
+      console.error('Failed to load trending posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePostClick = async (post: ForumPost) => {
+    // Trigger haptics on native
+    await HapticsService.impactLight();
     const postDetail = {
       id: post.id,
       title: post.title,
-      content: post.subtitle,
+      content: post.content,
       author: '用戶',
       avatar: '用',
-      time: '2小時前',
-      likes: post.likes,
-      comments: post.comments,
-      category: post.category,
-      categoryColor: 'bg-orange-500'
+      time: formatTimeAgo(post.created_at),
+      likes: 0, // TODO: implement likes system
+      comments: 0, // TODO: implement comments system
+      category: getCategoryEmoji(post.post_type),
+      categoryColor: getCategoryColor(post.post_type)
     };
     setSelectedPost(postDetail);
   };
@@ -72,40 +116,43 @@ export function ExploreScreen({ onModuleSelect }: ExploreScreenProps) {
     setSelectedPost(null);
   };
 
+  const formatTimeAgo = (createdAt: string): string => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return '剛剛';
+    if (diffInHours < 24) return `${diffInHours}小時前`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}天前`;
+    return `${Math.floor(diffInDays / 7)}週前`;
+  };
+
+  const getCategoryEmoji = (postType: string): string => {
+    switch (postType) {
+      case 'market': return '🛍️';
+      case 'housing': return '🏠';
+      case 'lfg': return '⚡';
+      default: return '💬';
+    }
+  };
+
+  const getCategoryColor = (postType: string): string => {
+    switch (postType) {
+      case 'market': return 'bg-green-500';
+      case 'housing': return 'bg-blue-500';
+      case 'lfg': return 'bg-orange-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   if (selectedPost) {
     return <PostDetailScreen post={selectedPost} onBack={handleBackToExplore} />;
   }
-  const quickStats = [
-    { label: '今日新貼', value: '124', icon: TrendingUp },
-    { label: '活躍用戶', value: '1.2k', icon: Users }
-  ];
-  //这个删掉变成banner
 
-  const trendingPosts = [
-    { 
-      id: 1, 
-      title: '英雄聯盟 五排組隊', 
-      subtitle: '3/5 還缺2位 週六晚上8點', 
-      category: '⚡', 
-      likes: 89, 
-      comments: 23
-    },
-    { 
-      id: 2, 
-      title: '拼車回家 北京→天津', 
-      subtitle: '2/4 本週五下午出發', 
-      category: '🚗', 
-      likes: 45, 
-      comments: 12
-    },
-    { 
-      id: 3, 
-      title: 'MacBook Pro 13寸', 
-      subtitle: '九成新 附送鍵盤保護膜', 
-      category: '🛍️', 
-      likes: 156, 
-      comments: 67
-    }
+  const quickStats = [
+    { label: '今日新貼', value: stats.todayPosts.toString(), icon: TrendingUp },
+    { label: '活躍用戶', value: `${Math.floor(stats.activeUsers / 100) / 10}k`, icon: Users }
   ];
 
   return (
@@ -191,27 +238,48 @@ export function ExploreScreen({ onModuleSelect }: ExploreScreenProps) {
         </div>
 
         <div className="space-y-3">
-          {trendingPosts.map((post) => (
-            <Card 
-              key={post.id} 
-              className="border border-gray-200 bg-white p-4 cursor-pointer hover:border-orange-300 transition-colors"
-              onClick={() => handlePostClick(post)}
-            >
-              <div className="flex items-start space-x-3">
-                <span className="text-lg flex-shrink-0">{post.category}</span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-1">
-                    {post.title}
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-2">{post.subtitle}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <span>👍 {post.likes}</span>
-                    <span>💬 {post.comments}</span>
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="inline-flex items-center space-x-2 text-gray-500">
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse delay-75"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-pulse delay-150"></div>
+                <span className="text-sm ml-2">載入中...</span>
+              </div>
+            </div>
+          ) : trendingPosts.length > 0 ? (
+            trendingPosts.map((post) => (
+              <Card 
+                key={post.id} 
+                className="border border-gray-200 bg-white p-4 cursor-pointer hover:border-orange-300 transition-colors"
+                onClick={() => handlePostClick(post)}
+              >
+                <div className="flex items-start space-x-3">
+                  <span className="text-lg flex-shrink-0">{getCategoryEmoji(post.post_type)}</span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-1">
+                      {post.title}
+                    </h3>
+                    <div className="text-xs text-gray-500 mb-2">
+                      <EnhancedTextRenderer 
+                        text={post.content} 
+                        className="line-clamp-2"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <span>👍 0</span>
+                      <span>💬 0</span>
+                      <span>{formatTimeAgo(post.created_at)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <p>暫無熱門動態</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

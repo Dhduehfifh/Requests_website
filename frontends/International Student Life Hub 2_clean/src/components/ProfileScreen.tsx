@@ -6,6 +6,7 @@ import { Separator } from './ui/separator';
 import { EditProfileScreen } from './EditProfileScreen';
 import { MyFavoritesScreen } from './MyFavoritesScreen';
 import { InviteFriendsScreen } from './InviteFriendsScreen';
+import { useAuth } from '../contexts/AuthContext';
 
 const stats = [
   { label: '貼文', value: 23, color: 'text-yellow-500' },
@@ -218,6 +219,7 @@ interface ProfileScreenProps {
 }
 
 export function ProfileScreen({ onSettingsClick }: ProfileScreenProps) {
+  const { user, logout } = useAuth();
   const [currentView, setCurrentView] = useState('main');
   const [savedRoutes, setSavedRoutes] = useState([
     { id: 1, route: '哈密尔顿 → 多伦多', frequency: '每周五', time: '17:00', price: '$15' },
@@ -268,6 +270,32 @@ export function ProfileScreen({ onSettingsClick }: ProfileScreenProps) {
   if (currentView === 'invite-friends') {
     return <InviteFriendsScreen onBack={() => setCurrentView('main')} />;
   }
+
+  // 如果用户未登录，显示登录提示
+  if (!user) {
+    return (
+      <div className="flex flex-col h-full bg-gray-50 items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-20 h-20 cheese-gradient rounded-full flex items-center justify-center cheese-hole mx-auto mb-6">
+            <User className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            请先登录
+          </h2>
+          <p className="text-gray-600 mb-6">
+            登录后可以查看个人资料、管理设置等
+          </p>
+          <Button 
+            onClick={() => window.location.reload()} // 触发登录模态框
+            className="cheese-gradient text-white border-0 hover:opacity-90"
+          >
+            立即登录
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
@@ -296,11 +324,11 @@ export function ProfileScreen({ onSettingsClick }: ProfileScreenProps) {
               
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                  John Doe
+                  {user.username}
                 </h2>
-                <p className="text-gray-600 mb-2">Computer Science Student</p>
+                <p className="text-gray-600 mb-2">{user.email}</p>
                 <p className="text-sm text-gray-500">
-                  📍 University Campus • Joined Sep 2024
+                  📍 {user.city || 'Unknown'} • Joined {new Date(user.created_at || Date.now()).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -522,7 +550,10 @@ export function ProfileScreen({ onSettingsClick }: ProfileScreenProps) {
 
         {/* Sign out */}
         <div className="p-4 mt-4">
-          <button className="w-full flex items-center justify-center space-x-2 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center space-x-2 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             <span className="font-medium">Sign Out</span>
           </button>

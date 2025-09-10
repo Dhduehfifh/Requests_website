@@ -1,334 +1,270 @@
-import { ArrowLeft, Heart, MessageCircle, Share, MoreHorizontal, Send, Image, Smile } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Heart, MessageSquare, Share, MoreHorizontal } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { EnhancedTextRenderer } from '../lib/linkRenderer';
+import { useAuth } from '../contexts/AuthContext';
+import { getPost, likePost, unlikePost, getPostLikes, addComment, getComments, type ForumPost, type ForumComment } from '../lib/api';
+import { HapticsService } from '../lib/haptics';
 
 interface PostDetailScreenProps {
-  post: {
-    id: number;
-    title: string;
-    content: string;
-    author: string;
-    avatar: string;
-    time: string;
-    likes: number;
-    comments: number;
-    category: string;
-    categoryColor: string;
-    images?: string[];
-    // Additional fields for different post types
-    price?: string;
-    location?: string;
-    condition?: string;
-    current?: number;
-    total?: number;
-    requirements?: string;
-  };
+  postId: string;
   onBack: () => void;
 }
 
-const mockComments = [
-  {
-    id: 1,
-    author: '陳小雅',
-    avatar: '雅',
-    content: '這個公寓看起來很不錯！租金是多少呢？',
-    time: '2小時前',
-    likes: 5,
-    replies: [
-      {
-        id: 11,
-        author: '房東',
-        avatar: '房',
-        content: '租金是2800元/月，包含水電費',
-        time: '1小時前',
-        likes: 2
-      }
-    ]
-  },
-  {
-    id: 2,
-    author: 'Mike Johnson',
-    avatar: 'MJ',
-    content: '位置很好，離學校很近。我朋友住在那裡，說環境不錯！',
-    time: '3小時前',
-    likes: 8,
-    replies: []
-  },
-  {
-    id: 3,
-    author: '王小明',
-    avatar: '明',
-    content: '可以看房嗎？我這週末有空',
-    time: '4小時前',
-    likes: 3,
-    replies: [
-      {
-        id: 31,
-        author: '房東',
-        avatar: '房',
-        content: '當然可以！請私信我安排時間',
-        time: '3小時前',
-        likes: 1
-      }
-    ]
-  },
-  {
-    id: 4,
-    author: '匿名用戶',
-    avatar: '匿',
-    content: '這個價格在市中心算是很實惠了，我之前看過類似的都要3000+',
-    time: '5小時前',
-    likes: 12,
-    replies: []
-  }
-];
-
-export function PostDetailScreen({ post, onBack }: PostDetailScreenProps) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
+export function PostDetailScreen({ postId, onBack }: PostDetailScreenProps) {
+  const { user } = useAuth();
+  const [post, setPost] = useState<ForumPost | null>(null);
+  const [comments, setComments] = useState<ForumComment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [showReplies, setShowReplies] = useState<number[]>([]);
+  const [likes, setLikes] = useState({ count: 0, liked: false });
+  const [loading, setLoading] = useState(true);
+  const [commentLoading, setCommentLoading] = useState(false);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-  };
+  useEffect(() => {
+    loadPostData();
+  }, [postId]);
 
-  const handleSendComment = () => {
-    if (newComment.trim()) {
-      console.log('Sending comment:', newComment);
-      setNewComment('');
+  const loadPostData = async () => {
+    try {
+      setLoading(true);
+      const [postData, likesData, commentsData] = await Promise.all([
+        getPost(postId),
+        getPostLikes(postId),
+        getComments(postId)
+      ]);
+      setPost(postData);
+      setLikes(likesData);
+      setComments(commentsData);
+    } catch (err) {
+      console.error('Failed to load post data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleReplies = (commentId: number) => {
-    setShowReplies(prev => 
-      prev.includes(commentId) 
-        ? prev.filter(id => id !== commentId)
-        : [...prev, commentId]
-    );
+  const handleLike = async () => {
+    if (!user || !post) return;
+    
+    try {
+      await HapticsService.impactLight();
+      
+      if (likes.liked) {
+        await unlikePost(post.id);
+        setLikes(prev => ({ count: prev.count - 1, liked: false }));
+      } else {
+        await likePost(post.id);
+        setLikes(prev => ({ count: prev.count + 1, liked: true }));
+      }
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+    }
   };
 
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !post || !newComment.trim()) return;
+
+    try {
+      setCommentLoading(true);
+      await HapticsService.impactLight();
+      
+      const comment = await addComment(post.id, newComment.trim());
+      setComments(prev => [...prev, comment]);
+      setNewComment('');
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <p className="text-gray-500 mb-4">帖子不存在</p>
+        <Button onClick={onBack}>返回</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="bg-white px-4 py-3 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">貼文詳情</h1>
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            <MoreHorizontal className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-gray-100 rounded-full"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-lg font-semibold">帖子详情</h1>
+        <button className="p-2 hover:bg-gray-100 rounded-full">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Post Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Main Post */}
-        <Card className="bg-white border-0 border-b border-gray-200 rounded-none">
-          <div className="p-4">
-            {/* Author Info */}
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-700">{post.avatar}</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{post.author}</h3>
-                <p className="text-sm text-gray-500">{post.time}</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-white text-xs font-medium ${post.categoryColor}`}>
-                {post.category}
+        <Card className="m-4 p-4">
+          {/* Author Info */}
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 cheese-gradient rounded-full flex items-center justify-center cheese-hole">
+              <span className="text-sm font-semibold text-white">
+                {post.author_id?.charAt(0).toUpperCase() || 'U'}
               </span>
             </div>
-
-            {/* Post Title */}
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{post.title}</h2>
-
-            {/* Post Content */}
-            <div className="mb-4">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">{post.content}</p>
-              
-              {/* Additional details based on post type */}
-              {post.price && (
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">價格</span>
-                    <span className="text-lg font-bold text-yellow-600">{post.price}</span>
-                  </div>
-                </div>
-              )}
-              
-              {post.current && post.total && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-gray-600">參與人數</span>
-                    <span className="text-lg font-bold text-blue-600">{post.current}/{post.total}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full" 
-                      style={{ width: `${(post.current / post.total) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-              
-              {post.requirements && (
-                <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-600 mr-2">要求:</span>
-                    <span className="text-sm font-medium text-green-700">{post.requirements}</span>
-                  </div>
-                </div>
-              )}
+            <div>
+              <p className="font-semibold text-gray-900">用户 {post.author_id?.slice(-4)}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(post.created_at).toLocaleString()}
+              </p>
             </div>
+          </div>
 
-            {/* Post Images */}
-            {post.images && post.images.length > 0 && (
-              <div className="mb-4">
+          {/* Post Title */}
+          {post.title && (
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              {post.title}
+            </h2>
+          )}
+
+          {/* Post Content */}
+          <div className="mb-4">
+            <EnhancedTextRenderer 
+              text={post.content} 
+              className="text-gray-700 leading-relaxed"
+            />
+          </div>
+
+          {/* Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {post.images.map((image, index) => (
                 <ImageWithFallback
-                  src={post.images[0]}
-                  alt={post.title}
-                  className="w-full h-48 object-cover rounded-lg"
+                  key={index}
+                  src={image}
+                  alt={`Post image ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg"
                 />
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-6">
-                  <button
-                    onClick={handleLike}
-                    className={`flex items-center space-x-2 transition-colors ${
-                      isLiked ? 'text-yellow-500' : 'text-gray-500 hover:text-yellow-500'
-                    }`}
-                  >
-                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                    <span className="text-sm font-medium">{likeCount}</span>
-                  </button>
-                  <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
-                    <MessageCircle className="w-5 h-5" />
-                    <span className="text-sm font-medium">{post.comments}</span>
-                  </button>
-                  <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors">
-                    <Share className="w-5 h-5" />
-                    <span className="text-sm font-medium">分享</span>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Join button for team/group posts */}
-              {post.current && post.total && post.current < post.total && (
-                <button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-4 px-4 rounded-lg transition-colors">
-                  立即加入 ({post.current}/{post.total})
-                </button>
-              )}
+              ))}
             </div>
+          )}
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {post.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleLike}
+                disabled={!user}
+                className={`flex items-center space-x-1 ${
+                  likes.liked ? 'text-red-500' : 'text-gray-500'
+                } ${!user ? 'opacity-50 cursor-not-allowed' : 'hover:text-red-500'}`}
+              >
+                <Heart className={`w-5 h-5 ${likes.liked ? 'fill-current' : ''}`} />
+                <span>{likes.count}</span>
+              </button>
+              
+              <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500">
+                <MessageSquare className="w-5 h-5" />
+                <span>{comments.length}</span>
+              </button>
+            </div>
+
+            <button className="text-gray-500 hover:text-gray-700">
+              <Share className="w-5 h-5" />
+            </button>
           </div>
         </Card>
 
         {/* Comments Section */}
-        <div className="p-4">
+        <div className="px-4">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            評論 ({post.comments})
+            评论 ({comments.length})
           </h3>
 
+          {/* Add Comment Form */}
+          {user ? (
+            <form onSubmit={handleAddComment} className="mb-4">
+              <div className="flex space-x-2">
+                <Input
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="写下你的评论..."
+                  className="flex-1"
+                  disabled={commentLoading}
+                />
+                <Button
+                  type="submit"
+                  disabled={!newComment.trim() || commentLoading}
+                  className="cheese-gradient text-white border-0"
+                >
+                  {commentLoading ? '发送中...' : '发送'}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="mb-4 p-3 bg-gray-100 rounded-lg text-center">
+              <p className="text-gray-600">请先登录才能评论</p>
+            </div>
+          )}
+
+          {/* Comments List */}
           <div className="space-y-4">
-            {mockComments.map((comment) => (
-              <div key={comment.id} className="space-y-3">
-                {/* Main Comment */}
-                <div className="flex space-x-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-medium text-gray-700">{comment.avatar}</span>
+            {comments.map((comment) => (
+              <Card key={comment.id} className="p-3">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 cheese-gradient rounded-full flex items-center justify-center cheese-hole">
+                    <span className="text-xs font-semibold text-white">
+                      {comment.author_id?.charAt(0).toUpperCase() || 'U'}
+                    </span>
                   </div>
                   <div className="flex-1">
-                    <div className="bg-gray-50 rounded-2xl p-3">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-medium text-gray-900 text-sm">{comment.author}</span>
-                        <span className="text-xs text-gray-500">{comment.time}</span>
-                      </div>
-                      <p className="text-gray-700 text-sm">{comment.content}</p>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="font-semibold text-sm text-gray-900">
+                        用户 {comment.author_id?.slice(-4)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </span>
                     </div>
-                    
-                    {/* Comment Actions */}
-                    <div className="flex items-center space-x-4 mt-2 ml-3">
-                      <button className="text-xs text-gray-500 hover:text-red-500 transition-colors">
-                        👍 {comment.likes}
-                      </button>
-                      <button 
-                        onClick={() => toggleReplies(comment.id)}
-                        className="text-xs text-gray-500 hover:text-blue-500 transition-colors"
-                      >
-                        {comment.replies.length > 0 ? `回覆 (${comment.replies.length})` : '回覆'}
-                      </button>
-                    </div>
+                    <p className="text-gray-700 text-sm">{comment.content}</p>
                   </div>
                 </div>
-
-                {/* Replies */}
-                {showReplies.includes(comment.id) && comment.replies.length > 0 && (
-                  <div className="ml-11 space-y-3">
-                    {comment.replies.map((reply) => (
-                      <div key={reply.id} className="flex space-x-3">
-                        <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-medium text-gray-700">{reply.avatar}</span>
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-white border border-gray-200 rounded-2xl p-3">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-medium text-gray-900 text-sm">{reply.author}</span>
-                              <span className="text-xs text-gray-500">{reply.time}</span>
-                            </div>
-                            <p className="text-gray-700 text-sm">{reply.content}</p>
-                          </div>
-                          <div className="mt-1 ml-3">
-                            <button className="text-xs text-gray-500 hover:text-red-500 transition-colors">
-                              👍 {reply.likes}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              </Card>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Comment Input */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          <button className="p-2 hover:bg-gray-100 rounded-full">
-            <Image className="w-5 h-5 text-gray-600" />
-          </button>
-          
-          <div className="flex-1 relative">
-            <Input
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="寫下你的評論..."
-              className="pr-12 bg-gray-50 border-0 rounded-full"
-            />
-            <button className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full">
-              <Smile className="w-4 h-4 text-gray-600" />
-            </button>
-          </div>
-          
-          <button
-            onClick={handleSendComment}
-            disabled={!newComment.trim()}
-            className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          {comments.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>还没有评论，来抢沙发吧！</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
