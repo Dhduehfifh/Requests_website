@@ -1,1 +1,0 @@
-The database structure was entirely contributed by Mike. Due to the failure to create the repository in time, the contribution cannot be recorded. This is hereby declared
