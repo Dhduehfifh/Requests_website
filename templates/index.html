@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Cheese Mock Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Cheese 模拟前端面板</h1>
+    <div class="env">
+      <label>BASE：</label>
+      <code id="base-url"></code>
+      <label>cookie：</label>
+      <code id="cookie-view"></code>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <!-- 左栏：用户相关 -->
+    <section class="card">
+      <h2>用户上下文</h2>
+      <div class="row">
+        <label>user_id</label>
+        <input id="user-id" type="number" value="1" />
+      </div>
+      <div class="row">
+        <label>watcher_id（他人主页用）</label>
+        <input id="watcher-id" type="number" value="2" />
+      </div>
+      <div class="row">
+        <button id="btn-activities">拉取 Activities</button>
+        <button id="btn-profile-info">拉取 Edit_Profile/Info</button>
+        <button id="btn-logout">登出</button>
+      </div>
+      <details open>
+        <summary>返回（活动/资料/登出）</summary>
+        <pre id="out-user" class="pre"></pre>
+      </details>
+
+      <h3>他人主页</h3>
+      <div class="row">
+        <button id="btn-other-profile">GET /user/:user_id/profile/:watcher_id</button>
+      </div>
+      <details>
+        <summary>返回（他人主页）</summary>
+        <pre id="out-other" class="pre"></pre>
+      </details>
+    </section>
+
+    <!-- 中栏：帖子相关 -->
+    <section class="card">
+      <h2>Your Activity 六类帖子</h2>
+      <div class="row wrap">
+        <button data-cat="rent" class="btn-cat">rent</button>
+        <button data-cat="general" class="btn-cat">general</button>
+        <button data-cat="second_hand" class="btn-cat">second_hand</button>
+        <button data-cat="confession" class="btn-cat">confession</button>
+        <button data-cat="team" class="btn-cat">team</button>
+        <button data-cat="ride" class="btn-cat">ride</button>
+      </div>
+      <details open>
+        <summary>列表渲染（卡片）</summary>
+        <div id="post-cards" class="list"></div>
+      </details>
+      <details>
+        <summary>原始 JSON</summary>
+        <pre id="out-posts" class="pre"></pre>
+      </details>
+
+      <h3>发布动态（模拟表单 JSON）</h3>
+      <form id="sendpost-form" class="form">
+        <input name="title" placeholder="Title" />
+        <input name="type" placeholder="type（rent/secondhand/forum/confession/teamup/rideshare）" />
+        <textarea name="content" placeholder="content"></textarea>
+        <button type="submit">POST /user/:user_id/sendpost</button>
+      </form>
+      <details>
+        <summary>返回（sendpost）</summary>
+        <pre id="out-sendpost" class="pre"></pre>
+      </details>
+    </section>
+
+    <!-- 右栏：消息/搜索/推荐 -->
+    <section class="card">
+      <h2>消息 & 搜索 / 推荐</h2>
+      <div class="row">
+        <button id="btn-chats">GET /user/:user_id/chats</button>
+      </div>
+      <details open>
+        <summary>返回（chats）</summary>
+        <div id="chat-cards" class="list"></div>
+        <pre id="out-chats" class="pre"></pre>
+      </details>
+
+      <h3>搜索（带类别）</h3>
+      <div class="row">
+        <input id="search-cat" placeholder="category（general/second_hand/confession/team/ride/rent）" />
+      </div>
+      <div class="row">
+        <input id="search-q" placeholder="q（关键词）" />
+        <input id="search-tags" placeholder="tags（#tag1,#tag2）" />
+        <button id="btn-search">POST /search/:category/:user_id</button>
+      </div>
+      <details>
+        <summary>返回（search）</summary>
+        <pre id="out-search" class="pre"></pre>
+      </details>
+
+      <h3>推荐</h3>
+      <div class="row">
+        <button id="btn-reco">GET /recommend/:user_id</button>
+      </div>
+      <details>
+        <summary>返回（recommend）</summary>
+        <div id="reco-cards" class="list"></div>
+        <pre id="out-reco" class="pre"></pre>
+      </details>
+    </section>
+
+  </main>
+
+  <footer>
+    <small>© Cheese Mock | 手动点按钮逐个验证接口返回</small>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
